@@ -137,20 +137,12 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Shift Submission</h1>
-    
-    <div class="form-group">
-      <label for="shiftName">Shift Name</label>
-      <input id="shiftName" type="text" placeholder="e.g., Morning Shift A">
-    </div>
+<div class="form-group">
+  <label for="shiftName">Shift Name</label>
+  <input id="shiftName" type="text" placeholder="e.g., Morning Shift A">
+</div>
 
-    <div class="form-group">
-      <label for="host">Host Name</label>
-      <input id="host" type="text" placeholder="e.g., John Doe">
-    </div>
-
-    <div class="form-group">
+<div class="form-group">
   <label for="host">Host Name</label>
   <input id="host" type="text" placeholder="e.g., John Doe">
 </div>
@@ -163,19 +155,14 @@
 <div class="form-group">
   <label for="entries">Shift Entries</label>
   <textarea id="entries" placeholder="username,xp,rank&#10;player1,150,Chef&#10;player2,200,Senior Chef"></textarea>
-
-    <div class="form-group">
-      <label for="entries">Shift Entries</label>
-      <textarea id="entries" placeholder="username,xp,rank&#10;player1,150,Chef&#10;player2,200,Senior Chef"></textarea>
-      <div class="helper-text">Format: username,xp,rank (one entry per line)</div>
-    </div>
-
-    <button onclick="submitShift()">Submit Shift</button>
-    
-    <div id="status"></div>
+  <div class="helper-text">Format: username,xp,rank (one entry per line)</div>
+  <div class="helper-text" style="margin-top: 10px;">
+    <strong>Valid ranks:</strong> Kitchen Trainee, Junior Chef, Chef, Station Cook, Senior Chef, Lead Chef, Shift Supervisor, Sous Chef, Head Chef, Supervisory Chef, Culinary Chef, Operations Coordinator, Chief of Staff, Deputy Franchise Director, Franchise Director, Administrator
   </div>
+</div>
 
   <script src="script.js"></script>
 </body>
 </html>
+
 
