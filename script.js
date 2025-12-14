@@ -1,6 +1,6 @@
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyGjePNo5Q8GcSNdrahd2ffpY_37U3C44iqD1nE71VnvSv6lA9myI6ipahkhChoZdzOOw/exec";
 const API_KEY = "7kQm9xL2pNfR8vT";
-const HOSTER_CODE = "kitchen-control-17";
+const HOSTER_CODE = "CHANGE_THIS";
 
 const ALLOWED_RANKS = [
   "Kitchen Trainee",
@@ -83,15 +83,15 @@ function submitShift() {
 
   showStatus('info', 'Submitting shift...');
 
+  const formData = new URLSearchParams();
+  formData.append('apiKey', API_KEY);
+  formData.append('shiftName', shiftName);
+  formData.append('host', host);
+  formData.append('entries', JSON.stringify(parsedEntries));
+
   fetch(SCRIPT_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      apiKey: API_KEY,
-      shiftName,
-      host,
-      entries: parsedEntries
-    })
+    body: formData
   })
   .then(res => res.text())
   .then(text => {
