@@ -37,6 +37,26 @@
       font-size: 28px;
     }
 
+    .auth-section {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .user-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .user-email {
+      font-weight: 600;
+      color: #555;
+    }
+
     .form-group {
       margin-bottom: 20px;
     }
@@ -104,6 +124,15 @@
       transform: none;
     }
 
+    .btn-secondary {
+      background: #6c757d;
+      margin-top: 10px;
+    }
+
+    .btn-secondary:hover {
+      box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    }
+
     #status {
       margin-top: 20px;
       padding: 15px;
@@ -134,42 +163,297 @@
       border: 1px solid #bee5eb;
       display: block;
     }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Shift Submission</h1>
     
-    <div class="form-group">
-      <label for="shiftName">Shift Name</label>
-      <input id="shiftName" type="text" placeholder="e.g., Morning Shift A">
+    <!-- Loading State -->
+    <div id="loadingSection" class="loading">
+      <p>Loading...</p>
     </div>
 
-    <div class="form-group">
-      <label for="host">Host Name</label>
-      <input id="host" type="text" placeholder="e.g., John Doe">
+    <!-- Login Section -->
+    <div id="loginSection" class="auth-section hidden">
+      <p style="margin-bottom: 20px; color: #666;">Please sign in with your authorized Google account to submit shifts.</p>
+      <button onclick="signIn()">Sign in with Google</button>
     </div>
 
-    <div class="form-group">
-      <label for="hosterCode">Hoster Code</label>
-      <input id="hosterCode" type="password" placeholder="Internal code">
-    </div>
-
-    <div class="form-group">
-      <label for="entries">Shift Entries</label>
-      <textarea id="entries" placeholder="username,xp,rank&#10;player1,150,Chef&#10;player2,200,Senior Chef"></textarea>
-      <div class="helper-text">Format: username,xp,rank (one entry per line)</div>
-      <div class="helper-text" style="margin-top: 10px;">
-        <strong>Valid ranks:</strong> Kitchen Trainee, Junior Chef, Chef, Station Cook, Senior Chef, Lead Chef, Shift Supervisor, Sous Chef, Head Chef, Supervisory Chef, Culinary Chef, Operations Coordinator, Chief of Staff, Deputy Franchise Director, Franchise Director, Administrator
+    <!-- Main Form Section -->
+    <div id="formSection" class="hidden">
+      <div class="user-info">
+        <span class="user-email" id="userEmail"></span>
+        <button class="btn-secondary" onclick="signOut()" style="width: auto; padding: 8px 16px;">Sign Out</button>
       </div>
-    </div>
 
-    <button onclick="submitShift()">Submit Shift</button>
-    
-    <div id="status"></div>
+      <div class="form-group">
+        <label for="shiftName">Shift Name</label>
+        <input id="shiftName" type="text" placeholder="e.g., Morning Shift A">
+      </div>
+
+      <div class="form-group">
+        <label for="host">Host Name</label>
+        <input id="host" type="text" placeholder="e.g., John Doe">
+      </div>
+
+      <div class="form-group">
+        <label for="entries">Shift Entries</label>
+        <textarea id="entries" placeholder="username,xp,rank&#10;player1,150,Chef&#10;player2,200,Senior Chef"></textarea>
+        <div class="helper-text">Format: username,xp,rank (one entry per line)</div>
+        <div class="helper-text" style="margin-top: 10px;">
+          <strong>Valid ranks:</strong> Kitchen Trainee, Junior Chef, Chef, Station Cook, Senior Chef, Lead Chef, Shift Supervisor, Sous Chef, Head Chef, Supervisory Chef, Culinary Chef, Operations Coordinator, Chief of Staff, Deputy Franchise Director, Franchise Director, Administrator
+        </div>
+      </div>
+
+      <button onclick="submitShift()">Submit Shift</button>
+      
+      <div id="status"></div>
+    </div>
   </div>
 
-  <script src="config.js"></script>
-  <script src="script.js"></script>
+  <script type="module">
+    // Import and initialize immediately
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+    import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+
+    // Firebase configuration - REPLACE WITH YOUR CONFIG
+    const firebaseConfig = {
+		apiKey: "AIzaSyB_D96csFW7jcUFeAr73GoXbFcN46KqUGA",
+		authDomain: "noobtubers-cb3b6.firebaseapp.com",
+		projectId: "noobtubers-cb3b6",
+		storageBucket: "noobtubers-cb3b6.firebasestorage.app",
+		messagingSenderId: "400312718374",
+		appId: "1:400312718374:web:9c09634859cad7799e02e7",
+		measurementId: "G-R2DKQZC8BW"
+
+	};
+
+    // Check if config is still placeholder
+    if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+      document.getElementById('loadingSection').classList.add('hidden');
+      document.getElementById('loginSection').classList.remove('hidden');
+      document.getElementById('loginSection').innerHTML = `
+        <h2 style="color: #d64545; margin-bottom: 20px;">⚠️ Firebase Not Configured</h2>
+        <p style="margin-bottom: 15px;">You need to set up Firebase first:</p>
+        <ol style="text-align: left; margin: 0 auto; max-width: 400px; line-height: 1.8;">
+          <li>Create a Firebase project at <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a></li>
+          <li>Enable Authentication → Google sign-in</li>
+          <li>Create Firestore database</li>
+          <li>Copy your Firebase config</li>
+          <li>Replace the config in the HTML file</li>
+        </ol>
+        <p style="margin-top: 20px;"><a href="https://firebase.google.com/docs/web/setup" target="_blank" style="color: #667eea;">📖 View Setup Guide</a></p>
+      `;
+      throw new Error('Firebase config not set');
+    }
+
+    // Initialize Firebase
+    let app, auth, db, provider;
+    
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      provider = new GoogleAuthProvider();
+      console.log('Firebase initialized successfully');
+    } catch (error) {
+      console.error('Firebase initialization error:', error);
+      document.getElementById('loadingSection').innerHTML = 
+        '<p style="color: red;">Error: Failed to initialize Firebase. Please check your configuration.</p>';
+    }
+
+    // Allowed ranks
+    const ALLOWED_RANKS = [
+      "Kitchen Trainee",
+      "Junior Chef",
+      "Chef",
+      "Station Cook",
+      "Senior Chef",
+      "Lead Chef",
+      "Shift Supervisor",
+      "Sous Chef",
+      "Head Chef",
+      "Supervisory Chef",
+      "Culinary Chef",
+      "Operations Coordinator",
+      "Chief of Staff",
+      "Deputy Franchise Director",
+      "Franchise Director",
+      "Administrator"
+    ];
+
+    // UI Elements
+    const loadingSection = document.getElementById('loadingSection');
+    const loginSection = document.getElementById('loginSection');
+    const formSection = document.getElementById('formSection');
+    const userEmailElement = document.getElementById('userEmail');
+
+    // Auth state observer
+    if (auth) {
+      onAuthStateChanged(auth, (user) => {
+        loadingSection.classList.add('hidden');
+        
+        if (user) {
+          loginSection.classList.add('hidden');
+          formSection.classList.remove('hidden');
+          userEmailElement.textContent = user.email;
+        } else {
+          loginSection.classList.remove('hidden');
+          formSection.classList.add('hidden');
+        }
+      });
+    }
+
+    // Sign in function
+    window.signIn = async function() {
+      try {
+        // Use a popup for Google sign-in so the page doesn't fully redirect
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        console.error('Sign in error:', error);
+        showStatus('error', `Sign in failed: ${error.message}`);
+      }
+    };
+
+    // Sign out function
+    window.signOut = async function() {
+      try {
+        await firebaseSignOut(auth);
+        showStatus('info', 'Signed out successfully');
+      } catch (error) {
+        console.error('Sign out error:', error);
+        showStatus('error', `Sign out failed: ${error.message}`);
+      }
+    };
+
+    // Submit shift function
+    window.submitShift = async function() {
+      const statusEl = document.getElementById('status');
+      const shiftName = document.getElementById('shiftName').value.trim();
+      const host = document.getElementById('host').value.trim();
+      const entries = document.getElementById('entries').value.trim();
+
+      statusEl.className = '';
+      statusEl.style.display = 'none';
+
+      const user = auth.currentUser;
+      if (!user) {
+        showStatus('error', 'You must be signed in to submit shifts.');
+        return;
+      }
+
+      if (!shiftName) {
+        showStatus('error', 'Please enter a shift name.');
+        return;
+      }
+
+      if (!host) {
+        showStatus('error', 'Please enter a host name.');
+        return;
+      }
+
+      if (!entries) {
+        showStatus('error', 'Please enter at least one shift entry.');
+        return;
+      }
+
+      const lines = entries.split('\n').filter(line => line.trim());
+      const parsedEntries = [];
+      const errors = [];
+
+      lines.forEach((line, i) => {
+        const parts = line.split(',').map(p => p.trim());
+        
+        if (parts.length !== 3) {
+          errors.push(`Line ${i + 1}: Invalid format (expected 3 fields, got ${parts.length})`);
+          return;
+        }
+
+        const [username, xp, rank] = parts;
+
+        if (!username) {
+          errors.push(`Line ${i + 1}: Username is empty`);
+        }
+
+        if (!xp || isNaN(xp)) {
+          errors.push(`Line ${i + 1}: XP must be a number`);
+        }
+
+        if (!ALLOWED_RANKS.includes(rank)) {
+          errors.push(`Line ${i + 1}: Invalid rank "${rank}"`);
+        }
+
+        if (username && !isNaN(xp) && ALLOWED_RANKS.includes(rank)) {
+          parsedEntries.push({ 
+            username, 
+            xp: Number(xp), 
+            rank 
+          });
+        }
+      });
+
+      if (errors.length) {
+        showStatus('error', 'Validation errors:\n' + errors.join('\n'));
+        return;
+      }
+
+      showStatus('info', 'Submitting shift...');
+
+      try {
+        await addDoc(collection(db, 'shifts'), {
+          shiftName,
+          host,
+          entries: parsedEntries,
+          submittedBy: user.email,
+          submittedByUid: user.uid,
+          timestamp: serverTimestamp()
+        });
+
+        showStatus(
+          'success',
+          `Shift submitted successfully!\n\n` +
+          `Shift: ${shiftName}\n` +
+          `Host: ${host}\n` +
+          `Entries: ${parsedEntries.length}\n` +
+          `Total XP: ${parsedEntries.reduce((s, e) => s + e.xp, 0)}`
+        );
+
+        document.getElementById('entries').value = '';
+        document.getElementById('shiftName').value = '';
+
+      } catch (error) {
+        console.error('Submission error:', error);
+        
+        if (error.code === 'permission-denied') {
+          showStatus(
+            'error', 
+            'Permission denied. Your account is not authorized to submit shifts.\n\n' +
+            'Please contact an administrator.'
+          );
+        } else {
+          showStatus('error', `Failed to submit shift:\n${error.message}`);
+        }
+      }
+    };
+
+    function showStatus(type, message) {
+      const statusEl = document.getElementById('status');
+      statusEl.className = type;
+      statusEl.textContent = message;
+      statusEl.style.display = 'block';
+    }
+  </script>
 </body>
 </html>
