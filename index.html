@@ -421,6 +421,20 @@
           timestamp: serverTimestamp()
         });
 
+        // Sync to Google Sheets via Apps Script web app
+        await fetch("https://script.google.com/macros/s/AKfycbx7367gpJyceY7C6Kg7msUw0t66nL_hbUkM0Nyrl-aBIucO0to3CaI4xZwaQHUeyVVEdw/exec", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams({
+            apiKey: "7kQm9xL2pNfR8vT",
+            shiftName,
+            host,
+            entries: JSON.stringify(parsedEntries)
+          })
+        });
+
         showStatus(
           'success',
           `Shift submitted successfully!\n\n` +
